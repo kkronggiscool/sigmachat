@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <h1 style="text-align: center;">Welcome, <%= username %>!</h1>
+    <div id="chat-container">
+        <div id="messages"></div>
+    </div>
+    <form id="chat-form">
+        <input type="text" id="message-input" placeholder="Type a message..." autocomplete="off">
+        <button type="submit">Send</button>
+    </form>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const username = "<%= username %>";
+
+        // Load past messages on page load
+        socket.emit('loadMessages');
+
+        socket.on('messagesLoaded', (messages) => {
+            const messagesDiv = document.getElementById('messages');
+            messages.forEach(msg => {
+                const messageElement = document.createElement('p');
+                messageElement.textContent = `${msg.username}: ${msg.message}`;
+                messagesDiv.appendChild(messageElement);
+            });
+        });
+
+        // Handle incoming chat messages
+        socket.on('chatMessage', (message) => {
+            const messagesDiv = document.getElementById('messages');
+            const messageElement = document.createElement('p');
+            messageElement.textContent = message;
+            messagesDiv.appendChild(messageElement);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight; // Auto-scroll
+        });
+
+        // Handle chat form submission
+        const chatForm = document.getElementById('chat-form');
+        chatForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const messageInput = document.getElementById('message-input');
+            const message = messageInput.value;
+            if (message.trim()) {
+                socket.emit('chatMessage', { username, message });
+                messageInput.value = '';
+            }
+        });
+    </script>
+</body>
+</html>
